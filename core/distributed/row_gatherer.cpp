@@ -25,18 +25,24 @@ using DefaultCollComm = mpi::NeighborhoodCommunicator;
 
 
 template <typename LocalIndexType>
-mpi::request RowGatherer<LocalIndexType>::apply_async(ptr_param<const LinOp> b,
-                                                      ptr_param<LinOp> x) const
+std::shared_ptr<mpi::request> RowGatherer<LocalIndexType>::apply_async(
+    ptr_param<const LinOp> b, ptr_param<LinOp> x) const
 {
     return apply_async(b, x, send_workspace_);
 }
-
 
 template <typename LocalIndexType>
 mpi::request RowGatherer<LocalIndexType>::apply_async(
     ptr_param<const LinOp> b, ptr_param<LinOp> x, array<char>& workspace) const
 {
-    mpi::request req;
+    return std::move(*apply_async_impl(b, x, workspace).release());
+}
+
+template <typename LocalIndexType>
+std::unique_ptr<mpi::request> RowGatherer<LocalIndexType>::apply_async_impl(
+    ptr_param<const LinOp> b, ptr_param<LinOp> x, array<char>& workspace) const
+{
+    std::unique_ptr<mpi::request> req;
 
     auto exec = this->get_executor();
     auto use_host_buffer =
@@ -98,8 +104,10 @@ mpi::request RowGatherer<LocalIndexType>::apply_async(
                     mpi::contiguous_type type(
                         b_local->get_size()[1],
                         mpi::type_impl<ValueType>::get_type());
-                    req = coll_comm_->i_all_to_all_v(
-                        mpi_exec, send_ptr, type.get(), recv_ptr, type.get());
+                    req = std::make_unique<mpi::request>(
+                        coll_comm_->i_all_to_all_v(mpi_exec, send_ptr,
+                                                   type.get(), recv_ptr,
+                                                   type.get()));
                 },
                 x.get());
         });
