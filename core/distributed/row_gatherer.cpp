@@ -25,7 +25,7 @@ using DefaultCollComm = mpi::NeighborhoodCommunicator;
 
 
 template <typename LocalIndexType>
-std::shared_ptr<mpi::request> RowGatherer<LocalIndexType>::apply_async(
+mpi::request RowGatherer<LocalIndexType>::apply_async(
     ptr_param<const LinOp> b, ptr_param<LinOp> x) const
 {
     return apply_async(b, x, send_workspace_);

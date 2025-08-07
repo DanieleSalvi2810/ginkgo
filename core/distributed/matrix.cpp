@@ -473,7 +473,7 @@ void Matrix<ValueType, LocalIndexType, GlobalIndexType>::apply_impl(
                                 : recv_vector.get();
             auto req = this->row_gatherer_->apply_async(dense_b, recv_ptr);
             local_mtx_->apply(dense_b->get_local_vector(), local_x);
-            req->wait();
+            req.wait();
 
             if (recv_ptr != recv_vector.get()) {
                 recv_vector->copy_from(host_recv_vector);
@@ -527,7 +527,7 @@ void Matrix<ValueType, LocalIndexType, GlobalIndexType>::apply_impl(
             auto req = this->row_gatherer_->apply_async(dense_b, recv_ptr);
             local_mtx_->apply(local_alpha.get(), dense_b->get_local_vector(),
                               local_beta.get(), local_x);
-            req->wait();
+            req.wait();
 
             if (recv_ptr != recv_vector.get()) {
                 recv_vector->copy_from(host_recv_vector);
@@ -581,7 +581,7 @@ void Matrix<ValueType, LocalIndexType, GlobalIndexType>::col_scale(
 
     auto req = row_gatherer_->apply_async(scaling_factors_ptr, recv_ptr);
     scale_diag->rapply(local_mtx_, local_mtx_);
-    req->wait();
+    req.wait();
     if (n_non_local_cols > 0) {
         if (recv_ptr != recv_vector.get()) {
             recv_vector->copy_from(host_recv_vector);
